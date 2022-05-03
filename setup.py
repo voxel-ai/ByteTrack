@@ -77,6 +77,7 @@ setuptools.setup(
             "motmetrics",
             "filterpy",
             "h5py",
+            "cython_bbox",
             "onnx==1.8.1",
             "onnxruntime==1.8.0",
             "onnx-simplifier==0.3.5",
