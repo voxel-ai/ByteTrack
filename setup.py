@@ -64,6 +64,7 @@ setuptools.setup(
     install_requires=[
             "torch>=1.7",
             "opencv_python",
+            "cython",
             "loguru",
             "scikit-image",
             "tqdm",
