@@ -61,4 +61,27 @@ setuptools.setup(
     classifiers=["Programming Language :: Python :: 3", "Operating System :: OS Independent"],
     cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},
     packages=setuptools.find_namespace_packages(),
+    install_requires=[
+            "torch>=1.7",
+            "opencv_python",
+            "cython",
+            "loguru",
+            "scikit-image",
+            "tqdm",
+            "torchvision>=0.10.0",
+            "Pillow",
+            "thop",
+            "ninja",
+            "tabulate",
+            "tensorboard",
+            "lap",
+            "motmetrics",
+            "filterpy",
+            "h5py",
+            "cython_bbox @ git+https://github.com/voxel-ai/cython_bbox.git@f070b7ec15d1e6b2b5129252f324122e2e397ff3#egg=cython_bbox",
+            "onnx==1.8.1",
+            "onnxruntime==1.8.0",
+            "onnx-simplifier==0.3.5",
+        ]
 )
+
