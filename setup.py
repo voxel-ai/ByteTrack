@@ -64,7 +64,7 @@ setuptools.setup(
     install_requires=[
             "torch>=1.7",
             "opencv_python",
-            "cython",
+            "cython==0.29.28",
             "loguru",
             "scikit-image",
             "tqdm",
@@ -78,9 +78,10 @@ setuptools.setup(
             "motmetrics",
             "filterpy",
             "h5py",
-            "cython_bbox",
+            "cython_bbox==0.1.3",
             "onnx==1.8.1",
             "onnxruntime==1.8.0",
             "onnx-simplifier==0.3.5",
         ]
 )
+
