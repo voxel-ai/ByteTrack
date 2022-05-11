@@ -94,7 +94,7 @@ class KalmanFilter(object):
     def get_multi_prediction_std_noise(self, mean):
 
         if self._should_mean_shift_noise:
-            std = [
+            pos_std = [
                     self._std_weight_position * mean[:, 3],
                     self._std_weight_position * mean[:, 3],
                     self._std_apect_ratio * np.ones_like(mean[:, 3]),
@@ -104,17 +104,30 @@ class KalmanFilter(object):
                     self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
                     self._std_weight_velocity * mean[:, 3]
                 ]
+
+            std_pos = [
+                self._std_weight_position * mean[:, 3],
+                self._std_weight_position * mean[:, 3],
+                self._std_apect_ratio * np.ones_like(mean[:, 3]),
+                self._std_weight_position * mean[:, 3]]
+            std_vel = [
+                self._std_weight_velocity * mean[:, 3],
+                self._std_weight_velocity * mean[:, 3],
+                self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
+                self._std_weight_velocity * mean[:, 3]]
+            std = np.r_[std_pos, std_vel]
         else:
-            std = [
-                    self._std_weight_position * np.ones_like(mean[:, 3]),
-                    self._std_weight_position * np.ones_like(mean[:, 3]),
-                    self._std_apect_ratio * np.ones_like(mean[:, 3]),
-                    self._std_weight_position * np.ones_like(mean[:, 3]),
-                    self._std_weight_velocity * np.ones_like(mean[:, 3]),
-                    self._std_weight_velocity * np.ones_like(mean[:, 3]),
-                    self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
-                    self._std_weight_velocity * np.ones_like(mean[:, 3]),
-                ]
+            std_pos = [
+                self._std_weight_position * np.ones_like(mean[:, 3]),
+                self._std_weight_position * np.ones_like(mean[:, 3]),
+                self._std_apect_ratio * np.ones_like(mean[:, 3]),
+                self._std_weight_position * np.ones_like(mean[:, 3])]
+            std_vel = [
+                self._std_weight_velocity * np.ones_like(mean[:, 3]),
+                self._std_weight_velocity * np.ones_like(mean[:, 3]),
+                self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
+                self._std_weight_velocity * np.ones_like(mean[:, 3])]
+            std = np.r_[std_pos, std_vel]
         return std
 
     def initiate(self, measurement):
