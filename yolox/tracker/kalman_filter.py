@@ -1,6 +1,7 @@
 # vim: expandtab:ts=4:sw=4
 import numpy as np
 import scipy.linalg
+from dataclasses import dataclass
 
 
 """
@@ -20,6 +21,16 @@ chi2inv95 = {
     9: 16.919}
 
 
+@dataclass
+class KalmanFilterConfig:
+    POSITION_STD_NOISE = 1. / 20
+    VELOCITY_STD_NOISE = 1. / 160
+    ASPECT_RATIO_STD_NOISE = 1e-2
+    ASPECT_RATIO_VELOCITY_STD_NOISE = 1e-5
+    SHOULD_MEAN_SHIFT_NOISE = True
+    ASPECT_RATIO_INNOVATION_STD_NOISE = 1e-1
+
+
 class KalmanFilter(object):
     """
     A simple Kalman filter for tracking bounding boxes in image space.
@@ -37,7 +48,7 @@ class KalmanFilter(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, config: KalmanFilterConfig = KalmanFilterConfig()):
         ndim, dt = 4, 1.
 
         # Create Kalman filter model matrices.
@@ -49,8 +60,14 @@ class KalmanFilter(object):
         # Motion and observation uncertainty are chosen relative to the current
         # state estimate. These weights control the amount of uncertainty in
         # the model. This is a bit hacky.
-        self._std_weight_position = 1. / 20
-        self._std_weight_velocity = 1. / 160
+        self._std_weight_position = config.POSITION_STD_NOISE
+        self._std_weight_velocity = config.VELOCITY_STD_NOISE
+        self._std_apect_ratio = config.ASPECT_RATIO_STD_NOISE
+        self._std_apect_ratio_velocity = config.ASPECT_RATIO_VELOCITY_STD_NOISE
+        self._should_mean_shift_noise = config.SHOULD_MEAN_SHIFT_NOISE
+        self._aspect_ratio_innovation_noise = config.ASPECT_RATIO_INNOVATION_STD_NOISE
+
+
 
     def initiate(self, measurement):
         """Create track from unassociated measurement.
