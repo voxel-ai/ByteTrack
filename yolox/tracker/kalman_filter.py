@@ -90,7 +90,7 @@ class KalmanFilter(object):
         mean_vel = np.zeros_like(mean_pos)
         mean = np.r_[mean_pos, mean_vel]
 
-        std = [
+        std = np.array([
             2 * self._std_weight_position,
             2 * self._std_weight_position,
             self._std_apect_ratio,
@@ -98,7 +98,7 @@ class KalmanFilter(object):
             10 * self._std_weight_velocity,
             10 * self._std_weight_velocity,
             self._std_apect_ratio_velocity,
-            10 * self._std_weight_velocity]
+            10 * self._std_weight_velocity])
 
         if self._should_mean_shift_noise:
             std[0:2] *= measurement[3]
@@ -126,21 +126,21 @@ class KalmanFilter(object):
             state. Unobserved velocities are initialized to 0 mean.
 
         """
-        std_pos = [
+        std_pos = np.array([
             self._std_weight_position,
             self._std_weight_position,
             self._std_apect_ratio,
-            self._std_weight_position]
+            self._std_weight_position])
 
         if self._should_mean_shift_noise:
             std_pos[0:2] *= mean[3]
             std_pos[3] *= mean[3]
 
-        std_vel = [
+        std_vel = np.array([
             self._std_weight_velocity,
             self._std_weight_velocity,
             self._std_apect_ratio_velocity,
-            self._std_weight_velocity]
+            self._std_weight_velocity])
 
         if self._should_mean_shift_noise:
             std_vel[0:2] *= mean[3]
@@ -171,11 +171,11 @@ class KalmanFilter(object):
             estimate.
 
         """
-        std = [
+        std = np.array([
             self._std_weight_position,
             self._std_weight_position,
             self._aspect_ratio_innovation_noise,
-            self._std_weight_position]
+            self._std_weight_position])
 
         if self._should_mean_shift_noise:
             std[0:2] *= mean[3]
@@ -204,16 +204,16 @@ class KalmanFilter(object):
             Returns the mean vector and covariance matrix of the predicted
             state. Unobserved velocities are initialized to 0 mean.
         """
-        std_pos = [
+        std_pos = np.array([
             self._std_weight_position * mean[:, 3],
             self._std_weight_position * mean[:, 3],
             self._std_apect_ratio * np.ones_like(mean[:, 3]),
-            self._std_weight_position * mean[:, 3]]
-        std_vel = [
+            self._std_weight_position * mean[:, 3]])
+        std_vel = np.array([
             self._std_weight_velocity * mean[:, 3],
             self._std_weight_velocity * mean[:, 3],
             self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
-            self._std_weight_velocity * mean[:, 3]]
+            self._std_weight_velocity * mean[:, 3]])
         sqr = np.square(np.r_[std_pos, std_vel]).T
 
         motion_cov = []
