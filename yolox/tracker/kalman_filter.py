@@ -205,15 +205,27 @@ class KalmanFilter(object):
             state. Unobserved velocities are initialized to 0 mean.
         """
         std_pos = np.array([
-            self._std_weight_position * mean[:, 3],
-            self._std_weight_position * mean[:, 3],
+            self._std_weight_position * np.ones_like(mean[:, 3]),
+            self._std_weight_position * np.ones_like(mean[:, 3]),
             self._std_apect_ratio * np.ones_like(mean[:, 3]),
-            self._std_weight_position * mean[:, 3]])
+            self._std_weight_position * np.ones_like(mean[:, 3])])
+
+        if self._should_mean_shift_noise:
+            std_vel[0] *= mean[:, 3]
+            std_vel[1] *= mean[:, 3]
+            std_vel[3] *= mean[:, 3]
+
         std_vel = np.array([
-            self._std_weight_velocity * mean[:, 3],
-            self._std_weight_velocity * mean[:, 3],
+            self._std_weight_velocity * np.ones_like(mean[:, 3]),
+            self._std_weight_velocity * np.ones_like(mean[:, 3]),
             self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
-            self._std_weight_velocity * mean[:, 3]])
+            self._std_weight_velocity * np.ones_like(mean[:, 3])])
+
+        if self._should_mean_shift_noise:
+            std_vel[0] *= mean[:, 3]
+            std_vel[1] *= mean[:, 3]
+            std_vel[3] *= mean[:, 3]
+
         sqr = np.square(np.r_[std_pos, std_vel]).T
 
         motion_cov = []
