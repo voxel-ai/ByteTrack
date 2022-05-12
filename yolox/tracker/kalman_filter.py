@@ -91,14 +91,19 @@ class KalmanFilter(object):
         mean = np.r_[mean_pos, mean_vel]
 
         std = [
-            2 * self._std_weight_position * measurement[3],
-            2 * self._std_weight_position * measurement[3],
+            2 * self._std_weight_position,
+            2 * self._std_weight_position,
             self._std_apect_ratio,
-            2 * self._std_weight_position * measurement[3],
-            10 * self._std_weight_velocity * measurement[3],
-            10 * self._std_weight_velocity * measurement[3],
+            2 * self._std_weight_position,
+            10 * self._std_weight_velocity,
+            10 * self._std_weight_velocity,
             self._std_apect_ratio_velocity,
-            10 * self._std_weight_velocity * measurement[3]]
+            10 * self._std_weight_velocity]
+
+        if self._should_mean_shift_noise:
+            std[0:2] *= measurement[3]
+            std[3:7] *= measurement[3]
+            std[-1] *= measurement[3]
         covariance = np.diag(np.square(std))
         return mean, covariance
 
@@ -122,15 +127,24 @@ class KalmanFilter(object):
 
         """
         std_pos = [
-            self._std_weight_position * mean[3],
-            self._std_weight_position * mean[3],
+            self._std_weight_position,
+            self._std_weight_position,
             self._std_apect_ratio,
-            self._std_weight_position * mean[3]]
+            self._std_weight_position]
+
+        if self._should_mean_shift_noise:
+            std_pos[0:2] *= mean[3]
+            std_pos[3] *= mean[3]
+
         std_vel = [
-            self._std_weight_velocity * mean[3],
-            self._std_weight_velocity * mean[3],
+            self._std_weight_velocity,
+            self._std_weight_velocity,
             self._std_apect_ratio_velocity,
-            self._std_weight_velocity * mean[3]]
+            self._std_weight_velocity]
+
+        if self._should_mean_shift_noise:
+            std_vel[0:2] *= mean[3]
+            std_vel[3] *= mean[3]
         motion_cov = np.diag(np.square(np.r_[std_pos, std_vel]))
 
         #mean = np.dot(self._motion_mat, mean)
@@ -158,10 +172,15 @@ class KalmanFilter(object):
 
         """
         std = [
-            self._std_weight_position * mean[3],
-            self._std_weight_position * mean[3],
+            self._std_weight_position,
+            self._std_weight_position,
             self._aspect_ratio_innovation_noise,
-            self._std_weight_position * mean[3]]
+            self._std_weight_position]
+
+        if self._should_mean_shift_noise:
+            std[0:2] *= mean[3]
+            std[3] *= mean[3]
+
         innovation_cov = np.diag(np.square(std))
 
         mean = np.dot(self._update_mat, mean)
