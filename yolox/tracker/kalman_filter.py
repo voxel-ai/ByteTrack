@@ -211,9 +211,9 @@ class KalmanFilter(object):
             self._std_weight_position * np.ones_like(mean[:, 3])])
 
         if self._should_mean_shift_noise:
-            std_vel[0] *= mean[:, 3]
-            std_vel[1] *= mean[:, 3]
-            std_vel[3] *= mean[:, 3]
+            std_pos[0] *= mean[:, 3]
+            std_pos[1] *= mean[:, 3]
+            std_pos[3] *= mean[:, 3]
 
         std_vel = np.array([
             self._std_weight_velocity * np.ones_like(mean[:, 3]),
