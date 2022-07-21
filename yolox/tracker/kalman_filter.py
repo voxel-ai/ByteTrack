@@ -1,6 +1,7 @@
 # vim: expandtab:ts=4:sw=4
 import numpy as np
 import scipy.linalg
+from dataclasses import dataclass
 
 
 """
@@ -20,6 +21,16 @@ chi2inv95 = {
     9: 16.919}
 
 
+@dataclass
+class KalmanFilterConfig:
+    POSITION_STD_NOISE = 1. / 20
+    VELOCITY_STD_NOISE = 1. / 160
+    ASPECT_RATIO_STD_NOISE = 1e-2
+    ASPECT_RATIO_VELOCITY_STD_NOISE = 1e-5
+    SHOULD_MEAN_SHIFT_NOISE = True
+    ASPECT_RATIO_INNOVATION_STD_NOISE = 1e-1
+
+
 class KalmanFilter(object):
     """
     A simple Kalman filter for tracking bounding boxes in image space.
@@ -37,7 +48,7 @@ class KalmanFilter(object):
 
     """
 
-    def __init__(self):
+    def __init__(self, config: KalmanFilterConfig = KalmanFilterConfig()):
         ndim, dt = 4, 1.
 
         # Create Kalman filter model matrices.
@@ -49,8 +60,14 @@ class KalmanFilter(object):
         # Motion and observation uncertainty are chosen relative to the current
         # state estimate. These weights control the amount of uncertainty in
         # the model. This is a bit hacky.
-        self._std_weight_position = 1. / 20
-        self._std_weight_velocity = 1. / 160
+        self._std_weight_position = config.POSITION_STD_NOISE
+        self._std_weight_velocity = config.VELOCITY_STD_NOISE
+        self._std_apect_ratio = config.ASPECT_RATIO_STD_NOISE
+        self._std_apect_ratio_velocity = config.ASPECT_RATIO_VELOCITY_STD_NOISE
+        self._should_mean_shift_noise = config.SHOULD_MEAN_SHIFT_NOISE
+        self._aspect_ratio_innovation_noise = config.ASPECT_RATIO_INNOVATION_STD_NOISE
+
+
 
     def initiate(self, measurement):
         """Create track from unassociated measurement.
@@ -73,15 +90,20 @@ class KalmanFilter(object):
         mean_vel = np.zeros_like(mean_pos)
         mean = np.r_[mean_pos, mean_vel]
 
-        std = [
-            2 * self._std_weight_position * measurement[3],
-            2 * self._std_weight_position * measurement[3],
-            1e-2,
-            2 * self._std_weight_position * measurement[3],
-            10 * self._std_weight_velocity * measurement[3],
-            10 * self._std_weight_velocity * measurement[3],
-            1e-5,
-            10 * self._std_weight_velocity * measurement[3]]
+        std = np.array([
+            2 * self._std_weight_position,
+            2 * self._std_weight_position,
+            self._std_apect_ratio,
+            2 * self._std_weight_position,
+            10 * self._std_weight_velocity,
+            10 * self._std_weight_velocity,
+            self._std_apect_ratio_velocity,
+            10 * self._std_weight_velocity])
+
+        if self._should_mean_shift_noise:
+            std[0:2] *= measurement[3]
+            std[3:7] *= measurement[3]
+            std[-1] *= measurement[3]
         covariance = np.diag(np.square(std))
         return mean, covariance
 
@@ -104,16 +126,25 @@ class KalmanFilter(object):
             state. Unobserved velocities are initialized to 0 mean.
 
         """
-        std_pos = [
-            self._std_weight_position * mean[3],
-            self._std_weight_position * mean[3],
-            1e-2,
-            self._std_weight_position * mean[3]]
-        std_vel = [
-            self._std_weight_velocity * mean[3],
-            self._std_weight_velocity * mean[3],
-            1e-5,
-            self._std_weight_velocity * mean[3]]
+        std_pos = np.array([
+            self._std_weight_position,
+            self._std_weight_position,
+            self._std_apect_ratio,
+            self._std_weight_position])
+
+        if self._should_mean_shift_noise:
+            std_pos[0:2] *= mean[3]
+            std_pos[3] *= mean[3]
+
+        std_vel = np.array([
+            self._std_weight_velocity,
+            self._std_weight_velocity,
+            self._std_apect_ratio_velocity,
+            self._std_weight_velocity])
+
+        if self._should_mean_shift_noise:
+            std_vel[0:2] *= mean[3]
+            std_vel[3] *= mean[3]
         motion_cov = np.diag(np.square(np.r_[std_pos, std_vel]))
 
         #mean = np.dot(self._motion_mat, mean)
@@ -140,11 +171,16 @@ class KalmanFilter(object):
             estimate.
 
         """
-        std = [
-            self._std_weight_position * mean[3],
-            self._std_weight_position * mean[3],
-            1e-1,
-            self._std_weight_position * mean[3]]
+        std = np.array([
+            self._std_weight_position,
+            self._std_weight_position,
+            self._aspect_ratio_innovation_noise,
+            self._std_weight_position])
+
+        if self._should_mean_shift_noise:
+            std[0:2] *= mean[3]
+            std[3] *= mean[3]
+
         innovation_cov = np.diag(np.square(std))
 
         mean = np.dot(self._update_mat, mean)
@@ -168,16 +204,28 @@ class KalmanFilter(object):
             Returns the mean vector and covariance matrix of the predicted
             state. Unobserved velocities are initialized to 0 mean.
         """
-        std_pos = [
-            self._std_weight_position * mean[:, 3],
-            self._std_weight_position * mean[:, 3],
-            1e-2 * np.ones_like(mean[:, 3]),
-            self._std_weight_position * mean[:, 3]]
-        std_vel = [
-            self._std_weight_velocity * mean[:, 3],
-            self._std_weight_velocity * mean[:, 3],
-            1e-5 * np.ones_like(mean[:, 3]),
-            self._std_weight_velocity * mean[:, 3]]
+        std_pos = np.array([
+            self._std_weight_position * np.ones_like(mean[:, 3]),
+            self._std_weight_position * np.ones_like(mean[:, 3]),
+            self._std_apect_ratio * np.ones_like(mean[:, 3]),
+            self._std_weight_position * np.ones_like(mean[:, 3])])
+
+        if self._should_mean_shift_noise:
+            std_pos[0] *= mean[:, 3]
+            std_pos[1] *= mean[:, 3]
+            std_pos[3] *= mean[:, 3]
+
+        std_vel = np.array([
+            self._std_weight_velocity * np.ones_like(mean[:, 3]),
+            self._std_weight_velocity * np.ones_like(mean[:, 3]),
+            self._std_apect_ratio_velocity * np.ones_like(mean[:, 3]),
+            self._std_weight_velocity * np.ones_like(mean[:, 3])])
+
+        if self._should_mean_shift_noise:
+            std_vel[0] *= mean[:, 3]
+            std_vel[1] *= mean[:, 3]
+            std_vel[3] *= mean[:, 3]
+
         sqr = np.square(np.r_[std_pos, std_vel]).T
 
         motion_cov = []
