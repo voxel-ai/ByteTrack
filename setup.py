@@ -78,7 +78,7 @@ setuptools.setup(
             "motmetrics",
             "filterpy",
             "h5py",
-            "cython_bbox @ git+https://github.com/voxel-ai/cython_bbox.git@f070b7ec15d1e6b2b5129252f324122e2e397ff3#egg=cython_bbox",
+            "cython_bbox",
             "onnx",
             "onnxruntime",
             "onnx-simplifier",
